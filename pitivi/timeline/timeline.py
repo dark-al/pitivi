@@ -1148,19 +1148,27 @@ class Timeline(Gtk.VBox, Zoomable):
             progress_meter = auto_aligner.start()
             progress_meter.addWatcher(progress_dialog.updatePosition)
 
+    def _splitElements(self, elements):
+        position = self.app.current.pipeline.getPosition()
+
+        for element in elements:
+            start = element.get_start()
+            end = start + element.get_duration()
+            if start < position and end > position:
+                clip = element.get_parent()
+                clip.split(position)
+
     def _split(self, action):
         """
         Split clips at the current playhead position, regardless of selections.
         """
-        position = self.app.current.pipeline.getPosition()
+        selected = self.timeline.selection.getSelectedTrackElements()
 
-        for track in self.bTimeline.get_tracks():
-            for element in track.get_elements():
-                start = element.get_start()
-                end = start + element.get_duration()
-                if start < position and end > position:
-                    clip = element.get_parent()
-                    clip.split(position)
+        if selected:
+            self._splitElements(selected)
+        else:
+            for track in self.bTimeline.get_tracks():
+                self._splitElements(track.get_elements())
 
         self.bTimeline.commit()
 
